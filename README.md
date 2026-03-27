@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KATAMI STUDIO - Gestão Profissional</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #050505; color: #e4e4e7; }
+        .tab-content.hidden { display: none; }
+        .active-tab { border-bottom: 3px solid #dc2626; color: #dc2626; }
+        input, select { background: #18181b !important; border: 1px solid #27272a !important; color: white !important; }
+        
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+        .calendar-day { min-height: 80px; padding: 5px; border: 1px solid #27272a; transition: 0.2s; cursor: pointer; }
+        .calendar-day:hover { background: #18181b; }
+        .has-event { border-bottom: 3px solid #dc2626 !important; background: #111; }
+        .today { background: #dc262633; border: 1px solid #dc2626; }
+    </style>
+</head>
+<body>
+
+    <header class="p-6 text-center border-b border-zinc-900 bg-black">
+        <h1 class="text-3xl font-black tracking-tighter text-red-600 italic">KATAMI <span class="text-white not-italic">STUDIO</span></h1>
+    </header>
+
+    <nav class="flex sticky top-0 bg-zinc-950 border-b border-zinc-800 z-50 text-center">
+        <button id="tab-btn-agenda" onclick="openTab('agenda')" class="flex-1 py-4 font-bold uppercase text-xs active-tab text-red-600">Calendário & Agenda</button>
+        <button id="tab-btn-financeiro" onclick="openTab('financeiro')" class="flex-1 py-4 font-bold uppercase text-xs text-zinc-500">DRE & Performance</button>
+    </nav>
+
+    <main class="p-4 max-w-6xl mx-auto pb-20">
+        
+        <section id="agenda" class="tab-content space-y-8">
+            <div class="grid lg:grid-cols-2 gap-6">
+                <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-sm font-bold text-white uppercase italic">1. Gestão de Artistas</h2>
+                        <button onclick="document.getElementById('painel-tatuador').classList.toggle('hidden')" class="bg-red-600 text-[10px] px-3 py-1 rounded-full font-bold">GERENCIAR +</button>
+                    </div>
+                    <div id="painel-tatuador" class="hidden space-y-4 pt-4 border-t border-zinc-800">
+                        <form id="form-tatuador" class="flex gap-2">
+                            <input type="text" id="novo-tatuador" placeholder="Nome do Artista" class="flex-1 p-2 rounded text-sm">
+                            <button type="submit" class="bg-white text-black px-4 rounded font-bold text-xs">SALVAR</button>
+                        </form>
+                        <div id="lista-tatuadores-vertical" class="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto"></div>
+                    </div>
+
+                    <hr class="my-6 border-zinc-800">
+
+                    <h2 class="text-sm font-bold mb-4 text-white uppercase italic">2. Novo Agendamento 📅</h2>
+                    <form id="form-agenda" class="space-y-4">
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" id="cliente-nome" placeholder="Nome do Cliente" class="p-2 rounded text-sm" required>
+                            <input type="tel" id="cliente-tel" placeholder="WhatsApp" class="p-2 rounded text-sm" required>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="date" id="data" class="p-2 rounded text-sm" required>
+                            <input type="time" id="hora" class="p-2 rounded text-sm" required>
+                        </div>
+                        <select id="select-tatuador" class="w-full p-2 rounded text-sm" required></select>
+                        <input type="text" id="tipo" placeholder="Descrição da Tattoo" class="w-full p-2 rounded text-sm" required>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="number" id="valor-total" placeholder="Total R$" class="p-2 rounded text-sm font-bold text-green-500" required>
+                            <input type="number" id="sinal" placeholder="Sinal R$" class="p-2 rounded text-sm font-bold text-blue-400">
+                        </div>
+                        <button type="submit" class="w-full bg-red-600 font-black py-3 rounded-lg uppercase text-sm">Agendar Agora</button>
+                    </form>
+                </div>
+
+                <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 id="mes-ano-titulo" class="text-sm font-bold text-white uppercase italic">Março 2024</h2>
+                        <div class="flex gap-2">
+                            <button onclick="mudarMes(-1)" class="bg-zinc-800 px-3 py-1 rounded">←</button>
+                            <button onclick="mudarMes(1)" class="bg-zinc-800 px-3 py-1 rounded">→</button>
+                        </div>
+                    </div>
+                    <div class="calendar-grid text-[10px] font-bold text-zinc-500 uppercase mb-2 text-center">
+                        <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+                    </div>
+                    <div id="calendar-days" class="calendar-grid"></div>
+                </div>
+            </div>
+
+            <div id="detalhes-dia" class="bg-zinc-900 p-6 rounded-2xl border border-red-600/30 hidden">
+                <h3 id="titulo-detalhes" class="text-red-500 font-black uppercase italic mb-4">Tatuagens do Dia</h3>
+                <div id="lista-detalhes-dia" class="space-y-4"></div>
+            </div>
+        </section>
+
+        <section id="financeiro" class="tab-content hidden space-y-6">
+            <div class="grid lg:grid-cols-3 gap-6">
+                <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 lg:col-span-1">
+                    <h2 class="text-sm font-bold text-white uppercase italic mb-4">Lançar Despesa / Saída</h2>
+                    <form id="form-despesa" class="space-y-3">
+                        <input type="date" id="exp-data" class="w-full p-2 rounded text-sm" required>
+                        <input type="text" id="exp-desc" placeholder="Ex: Aluguel, Agulhas, Tinta..." class="w-full p-2 rounded text-sm" required>
+                        <select id="exp-categoria" class="w-full p-2 rounded text-sm" required>
+                            <option value="Fixo">Custo Fixo</option>
+                            <option value="Material">Material/Insumos</option>
+                            <option value="Marketing">Marketing/Anúncios</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                        <input type="number" id="exp-valor" placeholder="Valor R$" class="w-full p-2 rounded text-sm text-red-400 font-bold" required>
+                        <button type="submit" class="w-full bg-white text-black font-black py-2 rounded uppercase text-xs">Registrar Saída</button>
+                    </form>
+                </div>
+
+                <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800 lg:col-span-2">
+                    <h2 class="text-sm font-bold text-white uppercase italic mb-4">DRE - Demonstrativo de Resultado</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="text-zinc-500 uppercase text-[10px] border-b border-zinc-800">
+                                <tr>
+                                    <th class="pb-2">Indicador</th>
+                                    <th class="pb-2 text-right">Valor Mensal</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-zinc-800">
+                                <tr>
+                                    <td class="py-3 text-zinc-400 italic">(+) Faturamento Bruto (Sinais + Restantes)</td>
+                                    <td id="dre-faturamento" class="py-3 text-right text-green-500 font-bold">R$ 0,00</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 text-zinc-400 italic">(-) Despesas Totais</td>
+                                    <td id="dre-despesas" class="py-3 text-right text-red-500 font-bold">R$ 0,00</td>
+                                </tr>
+                                <tr class="bg-zinc-800/50">
+                                    <td class="py-3 font-bold text-white uppercase">(=) Lucro Líquido</td>
+                                    <td id="dre-lucro" class="py-3 text-right text-white font-black">R$ 0,00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800">
+                <h2 class="text-center text-xs font-bold uppercase mb-6 text-zinc-400 italic">Evolução Financeira (Mensal)</h2>
+                <div class="h-80"><canvas id="financeiroChart"></canvas></div>
+            </div>
+
+            <div class="bg-zinc-900 p-6 rounded-2xl border border-zinc-800">
+                <h2 class="text-sm font-bold text-white uppercase italic mb-4">Últimos Lançamentos</h2>
+                <div id="lista-financeira" class="space-y-2 max-h-60 overflow-y-auto pr-2"></div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let tatuadores = JSON.parse(localStorage.getItem('katami_tatuadores')) || [];
+        let agendamentos = JSON.parse(localStorage.getItem('katami_agenda')) || [];
+        let financeiro = JSON.parse(localStorage.getItem('katami_fin')) || []; // {data, valor, tipo: 'Entrada'|'Saída', descricao, tatuador}
+        let dataAtual = new Date();
+
+        function salvarLocal() {
+            localStorage.setItem('katami_tatuadores', JSON.stringify(tatuadores));
+            localStorage.setItem('katami_agenda', JSON.stringify(agendamentos));
+            localStorage.setItem('katami_fin', JSON.stringify(financeiro));
+            renderTudo();
+        }
+
+        // GESTÃO DE TATUADORES
+        document.getElementById('form-tatuador').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const nome = document.getElementById('novo-tatuador').value.trim();
+            if(nome) {
+                tatuadores.push({ id: Date.now(), nome });
+                e.target.reset();
+                salvarLocal();
+            }
+        });
+
+        window.delTat = (id) => {
+            if(confirm("Excluir artista?")) {
+                tatuadores = tatuadores.filter(t => t.id !== id);
+                salvarLocal();
+            }
+        };
+
+        // CALENDÁRIO
+        function mudarMes(direcao) {
+            dataAtual.setMonth(dataAtual.getMonth() + direcao);
+            renderTudo();
+        }
+
+        function renderCalendario() {
+            const grid = document.getElementById('calendar-days');
+            const titulo = document.getElementById('mes-ano-titulo');
+            grid.innerHTML = '';
+            const ano = dataAtual.getFullYear();
+            const mes = dataAtual.getMonth();
+            titulo.innerText = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(dataAtual);
+            const primeiroDiaMes = new Date(ano, mes, 1).getDay();
+            const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+
+            for (let i = 0; i < primeiroDiaMes; i++) grid.innerHTML += `<div class="p-2"></div>`;
+
+            for (let dia = 1; dia <= diasNoMes; dia++) {
+                const dataString = `${ano}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+                const agsNoDia = agendamentos.filter(a => a.data === dataString);
+                const isToday = new Date().toISOString().split('T')[0] === dataString;
+
+                grid.innerHTML += `
+                    <div onclick="verDetalhes('${dataString}')" class="calendar-day ${isToday ? 'today' : ''} ${agsNoDia.length > 0 ? 'has-event' : ''}">
+                        <span class="text-[10px] font-bold ${agsNoDia.length > 0 ? 'text-red-500' : 'text-zinc-500'}">${dia}</span>
+                        <div class="mt-1">
+                            ${agsNoDia.slice(0, 2).map(a => `<div class="text-[8px] truncate bg-red-600 text-white rounded px-1 mb-px">${a.tatuador}</div>`).join('')}
+                        </div>
+                    </div>`;
+            }
+        }
+
+        window.verDetalhes = (data) => {
+            const lista = agendamentos.filter(a => a.data === data);
+            const container = document.getElementById('detalhes-dia');
+            const listaDiv = document.getElementById('lista-detalhes-dia');
+            if(lista.length === 0) { container.classList.add('hidden'); return; }
+            container.classList.remove('hidden');
+            document.getElementById('titulo-detalhes').innerText = `Agenda para ${data.split('-').reverse().join('/')}`;
+            listaDiv.innerHTML = lista.map(ag => `
+                <div class="bg-black p-4 rounded-xl border border-zinc-800 flex justify-between items-center">
+                    <div>
+                        <p class="text-xs font-black text-red-500">${ag.hora} - ${ag.tatuador.toUpperCase()}</p>
+                        <p class="text-sm font-bold text-white">${ag.cliente}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs font-bold text-yellow-500">Pendente: R$ ${ag.pendente.toFixed(2)}</p>
+                        <button onclick="delAg(${ag.id})" class="text-[10px] text-zinc-700 hover:text-red-500 mt-2 uppercase">Remover</button>
+                    </div>
+                </div>`).join('');
+            container.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // AGENDAMENTOS
+        document.getElementById('form-agenda').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const total = parseFloat(document.getElementById('valor-total').value);
+            const sinal = parseFloat(document.getElementById('sinal').value) || 0;
+            const tat = document.getElementById('select-tatuador').value;
+            const data = document.getElementById('data').value;
+
+            const ag = {
+                id: Date.now(),
+                cliente: document.getElementById('cliente-nome').value,
+                telefone: document.getElementById('cliente-tel').value,
+                data: data,
+                hora: document.getElementById('hora').value,
+                tatuador: tat,
+                tipo: document.getElementById('tipo').value,
+                total, sinal, pendente: total - sinal
+            };
+
+            agendamentos.push(ag);
+            // Lançamento automático no financeiro
+            if(sinal > 0) financeiro.push({ data, valor: sinal, tipo: 'Entrada', descricao: `Sinal: ${ag.cliente}`, tatuador: tat });
+            if(ag.pendente > 0) financeiro.push({ data, valor: ag.pendente, tipo: 'Entrada', descricao: `Restante: ${ag.cliente}`, tatuador: tat });
+            
+            e.target.reset();
+            salvarLocal();
+        });
+
+        // DESPESAS
+        document.getElementById('form-despesa').addEventListener('submit', (e) => {
+            e.preventDefault();
+            financeiro.push({
+                id: Date.now(),
+                data: document.getElementById('exp-data').value,
+                valor: parseFloat(document.getElementById('exp-valor').value),
+                tipo: 'Saída',
+                descricao: `[${document.getElementById('exp-categoria').value}] ${document.getElementById('exp-desc').value}`,
+                tatuador: 'Studio'
+            });
+            e.target.reset();
+            salvarLocal();
+        });
+
+        window.delFin = (id) => {
+            financeiro = financeiro.filter(f => f.id !== id);
+            salvarLocal();
+        }
+
+        window.delAg = (id) => {
+            if(confirm("Excluir agendamento?")) {
+                agendamentos = agendamentos.filter(a => a.id !== id);
+                salvarLocal();
+            }
+        };
+
+        // RENDERS GERAIS
+        function renderTudo() {
+            const select = document.getElementById('select-tatuador');
+            const listaTat = document.getElementById('lista-tatuadores-vertical');
+            select.innerHTML = '<option value="">Selecione o Artista</option>';
+            listaTat.innerHTML = '';
+            tatuadores.forEach(t => {
+                select.innerHTML += `<option value="${t.nome}">${t.nome}</option>`;
+                listaTat.innerHTML += `<div class="flex justify-between bg-black p-2 rounded border border-zinc-800 text-[10px]"><span>${t.nome}</span><button onclick="delTat(${t.id})" class="text-red-500">X</button></div>`;
+            });
+
+            renderCalendario();
+            if(!document.getElementById('financeiro').classList.contains('hidden')) updateFinanceiro();
+        }
+
+        function updateFinanceiro() {
+            const listaFin = document.getElementById('lista-financeira');
+            const mesAtual = dataAtual.getMonth();
+            const anoAtual = dataAtual.getFullYear();
+
+            let fatTotal = 0;
+            let desTotal = 0;
+
+            // Filtrar lançamentos do mês para o DRE
+            financeiro.forEach(f => {
+                const fData = new Date(f.data + 'T00:00:00');
+                if(fData.getMonth() === mesAtual && fData.getFullYear() === anoAtual) {
+                    if(f.tipo === 'Entrada') fatTotal += f.valor;
+                    else desTotal += f.valor;
+                }
+            });
+
+            document.getElementById('dre-faturamento').innerText = `R$ ${fatTotal.toFixed(2)}`;
+            document.getElementById('dre-despesas').innerText = `R$ ${desTotal.toFixed(2)}`;
+            document.getElementById('dre-lucro').innerText = `R$ ${(fatTotal - desTotal).toFixed(2)}`;
+
+            // Lista de lançamentos
+            listaFin.innerHTML = financeiro.slice().reverse().map(f => `
+                <div class="flex justify-between items-center bg-black p-2 rounded text-[11px] border-l-2 ${f.tipo === 'Entrada' ? 'border-green-500' : 'border-red-500'}">
+                    <span>${f.data.split('-').reverse().slice(0,2).join('/')} - ${f.descricao}</span>
+                    <span class="font-bold ${f.tipo === 'Entrada' ? 'text-green-500' : 'text-red-500'}">
+                        ${f.tipo === 'Entrada' ? '+' : '-'} R$ ${f.valor.toFixed(2)}
+                    </span>
+                </div>
+            `).join('');
+
+            updateChart();
+        }
+
+        function updateChart() {
+            const ctx = document.getElementById('financeiroChart')?.getContext('2d');
+            if(!ctx) return;
+
+            // Agrupar por mês (últimos 6 meses)
+            const ultimosMeses = [];
+            for(let i = 5; i >= 0; i--) {
+                let d = new Date();
+                d.setMonth(d.getMonth() - i);
+                ultimosMeses.push({
+                    label: new Intl.DateTimeFormat('pt-BR', { month: 'short' }).format(d),
+                    mes: d.getMonth(),
+                    ano: d.getFullYear(),
+                    entradas: 0,
+                    saidas: 0
+                });
+            }
+
+            financeiro.forEach(f => {
+                const fData = new Date(f.data + 'T00:00:00');
+                const m = ultimosMeses.find(um => um.mes === fData.getMonth() && um.ano === fData.getFullYear());
+                if(m) {
+                    if(f.tipo === 'Entrada') m.entradas += f.valor;
+                    else m.saidas += f.valor;
+                }
+            });
+
+            if(window.myChart) window.myChart.destroy();
+            window.myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ultimosMeses.map(m => m.label.toUpperCase()),
+                    datasets: [
+                        { label: 'FATURAMENTO', data: ultimosMeses.map(m => m.entradas), borderColor: '#22c55e', tension: 0.3, fill: false },
+                        { label: 'DESPESAS', data: ultimosMeses.map(m => m.saidas), borderColor: '#ef4444', tension: 0.3, fill: false }
+                    ]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#71717a', font: { size: 10, weight: 'bold' } } } },
+                    scales: { y: { ticks: { color: '#71717a' }, grid: { color: '#18181b' } }, x: { ticks: { color: '#71717a' }, grid: { display: false } } }
+                }
+            });
+        }
+
+        window.openTab = (n) => {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.querySelectorAll('nav button').forEach(b => b.classList.remove('active-tab', 'text-red-600'));
+            document.getElementById(n).classList.remove('hidden');
+            document.getElementById('tab-btn-'+n).classList.add('active-tab', 'text-red-600');
+            if(n === 'financeiro') updateFinanceiro();
+        };
+
+        renderTudo();
+    </script>
+</body>
+</html>
